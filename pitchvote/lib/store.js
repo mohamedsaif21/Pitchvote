@@ -63,6 +63,12 @@ function normalizeLoose(value) {
   return normalizeName(value).replace(/[^a-z0-9]/g, '');
 }
 
+function getCanonicalNameForRoll(data, name) {
+  const roll = getRollForName(data, name);
+  const rolls = (data && data.rolls) || {};
+  return roll ? rolls[roll] : String(name || '').trim();
+}
+
 function syncRoster(data) {
   const voters = Array.isArray(data?.voters) ? data.voters : [];
   const presenters = Array.isArray(data?.presenters) ? data.presenters : [];
@@ -70,7 +76,7 @@ function syncRoster(data) {
   const seen = new Set();
 
   [...voters, ...presenters].forEach(name => {
-    const label = typeof name === 'string' ? name : String(name || '');
+    const label = getCanonicalNameForRoll(data, typeof name === 'string' ? name : String(name || ''));
     const key = normalizeName(label);
     if (!key || seen.has(key)) return;
     seen.add(key);
