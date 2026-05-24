@@ -23,6 +23,9 @@ export default function HostPage() {
     return () => clearInterval(id);
   }, []);
 
+  const presenters = state?.presenters ?? [];
+  const voters = state?.voters ?? [];
+
   async function loadState() {
     const res = await fetch('/api/state');
     if (res.status === 401) { router.push('/'); return; }
@@ -59,7 +62,7 @@ export default function HostPage() {
     </div>
   );
 
-  const totalVotes = state.voters.reduce((a, v) => a + v.voteCount, 0);
+  const totalVotes = voters.reduce((a, v) => a + (v.voteCount || 0), 0);
   const maxVotesPerVoter = state.maxVotesPerVoter ?? 0;
 
   return (
@@ -153,8 +156,8 @@ export default function HostPage() {
               ) : (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {state.presenters.map((p, i) => (
-                      <button key={p.name} onClick={() => setSelectedPresenter(p)}
+                    {presenters.map((p, i) => (
+                      <button key={p?.name ?? i} onClick={() => setSelectedPresenter(p)}
                         style={{
                           width: '100%', textAlign: 'left', cursor: 'pointer',
                           padding: '18px 22px', borderRadius: 14,
@@ -168,25 +171,25 @@ export default function HostPage() {
                               {p.avg ? (MEDALS[i] || `#${i + 1}`) : '—'}
                             </span>
                             <div>
-                              <div style={{ fontWeight: 600, fontSize: 17 }}>{p.name}</div>
+                              <div style={{ fontWeight: 600, fontSize: 17 }}>{p?.name ?? 'Unknown presenter'}</div>
                               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                                {p.votes.length} vote{p.votes.length !== 1 ? 's' : ''} · tap for breakdown
+                                {(p?.votes?.length ?? 0)} vote{(p?.votes?.length ?? 0) !== 1 ? 's' : ''} · tap for breakdown
                               </div>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{
                               fontFamily: 'Sora', fontSize: 28, fontWeight: 700,
-                              color: p.avg >= 4 ? '#f5c842' : p.avg >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
+                              color: (p?.avg ?? 0) >= 4 ? '#f5c842' : (p?.avg ?? 0) >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
                             }}>
-                              {p.avg ? Number(p.avg).toFixed(1) : '—'}
+                              {p?.avg ? Number(p.avg).toFixed(1) : '—'}
                             </div>
                             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>avg / 5</div>
                           </div>
                         </div>
                         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="progress-track" style={{ flex: 1 }}>
-                            <div className="progress-fill" style={{ width: `${p.avg ? (p.avg / 5 * 100).toFixed(0) : 0}%` }} />
+                            <div className="progress-fill" style={{ width: `${p?.avg ? (p.avg / 5 * 100).toFixed(0) : 0}%` }} />
                           </div>
                           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', minWidth: 20 }}>5</span>
                         </div>
@@ -194,7 +197,7 @@ export default function HostPage() {
                     ))}
                   </div>
 
-                  {state.presenters.every(p => !p.avg) && (
+                  {presenters.every(p => !p?.avg) && (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
                       No votes cast yet. Waiting for voters…
                     </div>
@@ -209,33 +212,34 @@ export default function HostPage() {
             <div className="fade-up">
               <div className="glass" style={{ borderRadius: 14, overflow: 'hidden' }}>
                 {/* Table header */}
-                <div style={{
+                  <div style={{
                   display: 'grid',
-                  gridTemplateColumns: `180px repeat(${state.presenters.length}, 1fr) 80px`,
+                  gridTemplateColumns: `180px repeat(${presenters.length}, 1fr) 80px`,
                   padding: '10px 20px',
                   borderBottom: '1px solid rgba(255,255,255,0.08)',
                   fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
                   textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>
                   <span>Voter</span>
-                  {state.presenters.map(p => <span key={p.name} style={{ textAlign: 'center' }}>{p.name}</span>)}
+                  {presenters.map((p, i) => <span key={p?.name ?? i} style={{ textAlign: 'center' }}>{p?.name ?? 'Unknown'}</span>)}
                   <span style={{ textAlign: 'center' }}>Used</span>
                 </div>
 
-                {state.voters.map((voter, i) => (
-                  <div key={voter.name} style={{
+                {voters.map((voter, i) => (
+                  <div key={voter?.name ?? i} style={{
                     display: 'grid',
-                    gridTemplateColumns: `180px repeat(${state.presenters.length}, 1fr) 80px`,
+                    gridTemplateColumns: `180px repeat(${presenters.length}, 1fr) 80px`,
                     padding: '12px 20px',
-                    borderBottom: i < state.voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    borderBottom: i < voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                     alignItems: 'center',
                     background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
                   }}>
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>{voter.name}</span>
-                    {state.presenters.map(p => {
-                      const score = voter.votes[p.name];
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>{voter?.name ?? 'Unknown voter'}</span>
+                    {presenters.map((p, presenterIndex) => {
+                      const presenterName = p?.name ?? `Presenter ${presenterIndex + 1}`;
+                      const score = voter?.votes?.[presenterName];
                       return (
-                        <span key={p.name} style={{ textAlign: 'center' }}>
+                        <span key={presenterName} style={{ textAlign: 'center' }}>
                           {score !== undefined ? (
                             <span style={{
                               fontSize: 13, fontWeight: 600,
@@ -283,14 +287,14 @@ export default function HostPage() {
                   </button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {state.presenters.map(p => (
-                    <div key={p.name} style={{
+                  {presenters.map((p, i) => (
+                    <div key={p?.name ?? i} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '10px 14px', borderRadius: 10,
                       background: 'rgba(255,255,255,0.04)',
                     }}>
-                      <span style={{ fontSize: 14 }}>{p.name}</span>
-                      <button onClick={() => { if (confirm(`Remove ${p.name}? Their votes will be deleted.`)) adminAction('removePresenter', p.name); }}
+                      <span style={{ fontSize: 14 }}>{p?.name ?? 'Unknown presenter'}</span>
+                      <button onClick={() => { if (p?.name && confirm(`Remove ${p.name}? Their votes will be deleted.`)) adminAction('removePresenter', p.name); }}
                         style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
                     </div>
                   ))}
@@ -314,13 +318,13 @@ export default function HostPage() {
                   </button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
-                  {state.voters.map(v => (
-                    <div key={v.name} style={{
+                  {voters.map((v, i) => (
+                    <div key={v?.name ?? i} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',
                     }}>
-                      <span style={{ fontSize: 14 }}>{v.name}</span>
-                      <button onClick={() => { if (confirm(`Remove ${v.name}?`)) adminAction('removeVoter', v.name); }}
+                      <span style={{ fontSize: 14 }}>{v?.name ?? 'Unknown voter'}</span>
+                      <button onClick={() => { if (v?.name && confirm(`Remove ${v.name}?`)) adminAction('removeVoter', v.name); }}
                         style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
                     </div>
                   ))}
@@ -370,6 +374,7 @@ export default function HostPage() {
 }
 
 function PresenterDetail({ presenter, onBack }) {
+  const votes = presenter?.votes ?? [];
   return (
     <div className="fade-up">
       <button onClick={onBack} style={{
@@ -382,15 +387,15 @@ function PresenterDetail({ presenter, onBack }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2 style={{ fontFamily: 'Sora', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-              {presenter.name}
+              {presenter?.name ?? 'Unknown presenter'}
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
-              {presenter.votes.length} voter{presenter.votes.length !== 1 ? 's' : ''} · Rank #{presenter.rank}
+              {votes.length} voter{votes.length !== 1 ? 's' : ''} · Rank #{presenter?.rank ?? '—'}
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: 'Sora', fontSize: 40, fontWeight: 700, color: '#f5c842' }}>
-              {presenter.avg ? Number(presenter.avg).toFixed(2) : '—'}
+              {presenter?.avg ? Number(presenter.avg).toFixed(2) : '—'}
             </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>average score</div>
           </div>
@@ -398,10 +403,10 @@ function PresenterDetail({ presenter, onBack }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {presenter.votes.length === 0 ? (
+        {votes.length === 0 ? (
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>No votes yet.</p>
         ) : (
-          [...presenter.votes].sort((a, b) => b[1] - a[1]).map(([voter, score]) => (
+          [...votes].sort((a, b) => b[1] - a[1]).map(([voter, score]) => (
             <div key={voter} className="glass" style={{ borderRadius: 12, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 15 }}>{voter}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

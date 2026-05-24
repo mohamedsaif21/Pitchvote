@@ -16,6 +16,10 @@ export default function VotePage() {
   const [submitMsg, setSubmitMsg] = useState('');
   const [error, setError] = useState('');
 
+  const presenters = state?.presenters ?? [];
+  const myVotes = state?.myVotes ?? {};
+  const voteCount = state?.voteCount ?? 0;
+
   useEffect(() => { loadState(); }, []);
 
   async function loadState() {
@@ -65,7 +69,7 @@ export default function VotePage() {
   );
 
   const maxVotes = state.maxVotesPerVoter ?? 0;
-  const votesLeft = maxVotes - state.voteCount;
+  const votesLeft = maxVotes - voteCount;
   const activeStar = hoverStar || selectedStar;
 
   return (
@@ -86,7 +90,7 @@ export default function VotePage() {
           <div>
             <div style={{ fontFamily: 'Sora', fontWeight: 700, fontSize: 18 }}>PitchVote</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
-              {state.roll ? `${state.roll} — ${state.name}` : `Welcome, ${state.name}`}
+              {state.roll ? `${state.roll} — ${state?.name ?? 'voter'}` : `Welcome, ${state?.name ?? 'voter'}`}
             </div>
           </div>
           <button className="btn-ghost" onClick={handleLogout} style={{ padding: '8px 14px', fontSize: 13 }}>
@@ -101,16 +105,16 @@ export default function VotePage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
               <span style={{ color: 'rgba(255,255,255,0.5)' }}>Votes used</span>
               <span style={{ fontWeight: 600 }}>
-                <span style={{ color: state.voteCount >= maxVotes ? '#f87171' : '#6b93f5' }}>
-                  {state.voteCount}
+                <span style={{ color: voteCount >= maxVotes ? '#f87171' : '#6b93f5' }}>
+                  {voteCount}
                 </span>
                 <span style={{ color: 'rgba(255,255,255,0.3)' }}> / {maxVotes}</span>
               </span>
             </div>
             <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${maxVotes > 0 ? (state.voteCount / maxVotes) * 100 : 0}%` }} />
+              <div className="progress-fill" style={{ width: `${maxVotes > 0 ? (voteCount / maxVotes) * 100 : 0}%` }} />
             </div>
-            {state.voteCount >= maxVotes && (
+            {voteCount >= maxVotes && (
               <p style={{ fontSize: 12, color: '#fbbf24', marginTop: 8 }}>
                 ⚠️ You have used all your votes.
               </p>
@@ -129,8 +133,8 @@ export default function VotePage() {
               {/* presentersWithRoll removed to avoid showing placeholder lines */}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {state.presenters.map(presenter => {
-                  const myScore = state.myVotes[presenter];
+                {presenters.map(presenter => {
+                  const myScore = myVotes[presenter];
                   const hasVoted = myScore !== undefined;
                   return (
                     <button key={presenter} onClick={() => openScore(presenter)}
@@ -168,13 +172,13 @@ export default function VotePage() {
               </div>
 
               {/* My votes summary */}
-              {Object.keys(state.myVotes).length > 0 && (
+              {Object.keys(myVotes).length > 0 && (
                 <div style={{ marginTop: 32 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
                     Your scores
                   </div>
                   <div className="glass" style={{ borderRadius: 14, padding: '4px 0' }}>
-                    {Object.entries(state.myVotes).map(([p, s], i, arr) => (
+                    {Object.entries(myVotes).map(([p, s], i, arr) => (
                       <div key={p} style={{
                         padding: '12px 20px',
                         borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
@@ -215,17 +219,17 @@ export default function VotePage() {
                 Rate this pitch from 1 to 5 stars
               </p>
 
-              {state.myVotes[selectedPresenter] !== undefined ? (
+              {myVotes[selectedPresenter] !== undefined ? (
                 <div className="glass pop" style={{ borderRadius: 16, padding: 28, textAlign: 'center' }}>
                   <div style={{ fontSize: 40, marginBottom: 8 }}>
-                    {'★'.repeat(state.myVotes[selectedPresenter])}
-                    {'☆'.repeat(5 - state.myVotes[selectedPresenter])}
+                    {'★'.repeat(myVotes[selectedPresenter])}
+                    {'☆'.repeat(5 - myVotes[selectedPresenter])}
                   </div>
                   <div style={{ fontFamily: 'Sora', fontSize: 20, fontWeight: 700, marginBottom: 6 }}>
-                    You gave {state.myVotes[selectedPresenter]}/5
+                    You gave {myVotes[selectedPresenter]}/5
                   </div>
                   <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
-                    {STAR_LABELS[state.myVotes[selectedPresenter]]}
+                    {STAR_LABELS[myVotes[selectedPresenter]]}
                   </div>
                   {submitMsg && (
                     <div style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399', fontSize: 14 }}>
