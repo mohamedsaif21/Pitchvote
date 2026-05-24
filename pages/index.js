@@ -5,7 +5,6 @@ import Head from 'next/head';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [name, setName] = useState('');
   const [roll, setRoll] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState('voter'); // 'voter' | 'host'
@@ -15,9 +14,15 @@ export default function LoginPage() {
   async function handleLogin(e) {
     e.preventDefault();
     setError('');
+
+    if (mode === 'voter' && !String(roll).trim()) {
+      setError('Please enter your roll number.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const body = mode === 'host' ? { password } : { roll: roll || name };
+      const body = mode === 'host' ? { password } : { roll: String(roll).trim() };
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,7 +100,9 @@ export default function LoginPage() {
                   type="text"
                   placeholder="e.g. 712523205000"
                   value={roll}
-                  onChange={e => setRoll(e.target.value)}
+                  onChange={e => setRoll(e.target.value.replace(/\s+/g, ''))}
+                  inputMode="numeric"
+                  autoComplete="off"
                   autoFocus
                 />
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>
