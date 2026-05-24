@@ -69,3 +69,16 @@ export function getPresenterStats(data) {
   }).sort((a, b) => (b.avg || 0) - (a.avg || 0))
     .map((p, i) => ({ ...p, rank: i + 1 }));
 }
+
+// No roll support in this simpler store; keep compatibility helpers
+export function getRollForName(/* data, name */) {
+  return null;
+}
+
+export function getPresentersWithRoll(data) {
+  return (Array.isArray(data.presenters) ? data.presenters : []).map(name => `— — ${name}`);
+}
+
+export function getMaxVotesPerVoter(data) {
+  return Math.max(0, (Array.isArray(data?.presenters) ? data.presenters.length : 0) - 1);
+}
