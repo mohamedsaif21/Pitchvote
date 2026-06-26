@@ -7,11 +7,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "cookie": "^0.6.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "14.2.3",
     "react": "^18",
-    "react-dom": "^18",
-    "jsonwebtoken": "^9.0.2",
-    "cookie": "^0.6.0"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "autoprefixer": "^10",

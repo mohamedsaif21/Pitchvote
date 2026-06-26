@@ -2,11 +2,11 @@
 import { getData, getVoteCount, getTeamStats, getAllVoters, findVoterByRoll } from '../../lib/store';
 import { getSession } from '../../lib/auth';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const session = getSession(req);
   if (!session) return res.status(401).json({ error: 'Not logged in' });
 
-  const data = getData();
+  const data = await getData();
 
   if (session.role === 'host') {
     const stats = getTeamStats(data);

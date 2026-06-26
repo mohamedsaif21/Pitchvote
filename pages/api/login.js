@@ -2,7 +2,7 @@
 import { getData, findVoterByRoll } from '../../lib/store';
 import { setSessionCookie, HOST_PASSWORD } from '../../lib/auth';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const { password, roll } = req.body;
 
@@ -17,7 +17,7 @@ export default function handler(req, res) {
 
   // Voter login — roll-based login (roll required)
   if (roll !== undefined) {
-    const data = getData();
+    const data = await getData();
     const voterInfo = findVoterByRoll(data, roll);
     if (!voterInfo) return res.status(401).json({ error: 'Roll number not recognized' });
     
