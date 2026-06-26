@@ -1,5 +1,5 @@
 // pages/api/state.js
-import { getData, getVoteCount, getPresenterStats, getMaxVotesPerVoter, getPresentersWithRoll, getRollForName } from '../../lib/store';
+import { getData, getVoteCount, getTeamStats, getAllVoters, findVoterByRoll } from '../../lib/store';
 import { getSession } from '../../lib/auth';
 
 export default function handler(req, res) {
@@ -7,56 +7,58 @@ export default function handler(req, res) {
   if (!session) return res.status(401).json({ error: 'Not logged in' });
 
   const data = getData();
-  const sessionNameKey = String(session.name || '').trim().toLowerCase();
-  const sessionRoll = session.roll || getRollForName(data, session.name);
 
   if (session.role === 'host') {
-    const stats = getPresenterStats(data);
-    const maxVotesPerVoter = getMaxVotesPerVoter(data);
+    const stats = getTeamStats(data);
+    const voters = getAllVoters(data);
+    
+    const voterListWithVotes = voters.map(v => ({
+      name: v.name,
+      roll: v.roll,
+      teamId: v.teamId,
+      teamName: v.teamName,
+      voteCount: getVoteCount(data, v.roll),
+      votes: Object.entries(data.votes).reduce((acc, [teamId, votesObj]) => {
+        if (votesObj[v.roll] !== undefined) acc[teamId] = votesObj[v.roll];
+        return acc;
+      }, {})
+    }));
+
     return res.json({
       role: 'host',
-      presenters: stats,
-      voters: data.voters.map(v => ({
-        name: v,
-        voteCount: getVoteCount(data, v),
-        votes: Object.entries(data.votes).reduce((acc, [presenter, votes]) => {
-          if (votes[v] !== undefined) acc[presenter] = votes[v];
-          return acc;
-        }, {})
-      })),
-      maxVotesPerVoter,
-      rolls: data.rolls || {},
+      teams: stats,
+      presenters: stats, // alias for backwards compatibility
+      voters: voterListWithVotes,
+      maxVotesPerVoter: 4,
       meetingOpen: data.meetingOpen,
     });
   }
 
-  // Voter - only their own data
-  const myVotes = Object.entries(data.votes).reduce((acc, [presenter, votes]) => {
-    if (votes[session.name] !== undefined) acc[presenter] = votes[session.name];
+  // Voter - only their own data and available teams to vote on
+  const voterRoll = session.roll;
+  const voterInfo = findVoterByRoll(data, voterRoll);
+  if (!voterInfo) return res.status(401).json({ error: 'Voter not found' });
+
+  const myVotes = Object.entries(data.votes).reduce((acc, [teamId, votesObj]) => {
+    if (votesObj[voterRoll] !== undefined) acc[teamId] = votesObj[voterRoll];
     return acc;
   }, {});
-  const availablePresenters = data.presenters.filter(p => {
-    if (sessionRoll) {
-      const roll = getRollForName(data, p);
-      return roll !== sessionRoll;
-    }
-    return String(p || '').trim().toLowerCase() !== sessionNameKey;
-  });
-  const availableWithRoll = getPresentersWithRoll(data).filter(line => {
-    const parts = String(line).split('—');
-    const name = (parts[1] || parts[0] || '').trim().toLowerCase();
-    return name !== sessionNameKey;
-  });
+
+  const availableTeams = data.teams.filter(t => t.id !== voterInfo.team.id);
 
   return res.json({
     role: 'voter',
-    name: session.name,
-    roll: session.roll,
-    presenters: availablePresenters,
-    presentersWithRoll: availableWithRoll,
+    name: voterInfo.member.name,
+    roll: voterRoll,
+    team: {
+      id: voterInfo.team.id,
+      name: voterInfo.team.name
+    },
+    teams: data.teams,
+    presenters: availableTeams, // alias for backwards compatibility (teams that are votable)
     myVotes,
-    voteCount: getVoteCount(data, session.name),
-    maxVotesPerVoter: getMaxVotesPerVoter(data),
+    voteCount: getVoteCount(data, voterRoll),
+    maxVotesPerVoter: 4,
     meetingOpen: data.meetingOpen,
   });
 }

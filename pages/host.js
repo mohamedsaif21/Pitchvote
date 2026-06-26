@@ -1,5 +1,5 @@
 // pages/host.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
@@ -9,9 +9,7 @@ export default function HostPage() {
   const router = useRouter();
   const [state, setState] = useState(null);
   const [tab, setTab] = useState('results'); // 'results' | 'voters' | 'manage'
-  const [selectedPresenter, setSelectedPresenter] = useState(null);
-  const [newPresenter, setNewPresenter] = useState('');
-  const [newVoter, setNewVoter] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState(null);
   const [actionMsg, setActionMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +21,7 @@ export default function HostPage() {
     return () => clearInterval(id);
   }, []);
 
-  const presenters = state?.presenters ?? [];
+  const teams = state?.teams ?? [];
   const voters = state?.voters ?? [];
 
   async function loadState() {
@@ -40,20 +38,25 @@ export default function HostPage() {
   async function adminAction(action, value) {
     setLoading(true);
     setActionMsg('');
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, value }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setActionMsg('Done!');
-      await loadState();
-    } else {
-      setActionMsg('Error: ' + data.error);
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, value }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMsg('Done!');
+        await loadState();
+      } else {
+        setActionMsg('Error: ' + data.error);
+      }
+    } catch (e) {
+      setActionMsg('Request failed');
+    } finally {
+      setLoading(false);
+      setTimeout(() => setActionMsg(''), 3000);
     }
-    setLoading(false);
-    setTimeout(() => setActionMsg(''), 3000);
   }
 
   if (!state) return (
@@ -63,11 +66,15 @@ export default function HostPage() {
   );
 
   const totalVotes = voters.reduce((a, v) => a + (v.voteCount || 0), 0);
-  const maxVotesPerVoter = state.maxVotesPerVoter ?? 0;
+  const maxVotesPerVoter = state.maxVotesPerVoter ?? 4;
+  const maxPossibleVotes = voters.length * maxVotesPerVoter;
 
   return (
     <>
-      <Head><title>PitchVote — Host Dashboard</title></Head>
+      <Head>
+        <title>PitchVote — Host Dashboard</title>
+        <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+      </Head>
       <div style={{
         minHeight: '100vh',
         background: 'radial-gradient(ellipse 100% 40% at 50% 0%, rgba(51,85,209,0.18) 0%, transparent 60%), #080d1f',
@@ -78,7 +85,7 @@ export default function HostPage() {
           padding: '18px 28px',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          maxWidth: 860, margin: '0 auto',
+          maxWidth: 960, margin: '0 auto',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
@@ -87,20 +94,21 @@ export default function HostPage() {
               borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>🎯</div>
             <div>
-              <div style={{ fontFamily: 'Sora', fontWeight: 700, fontSize: 17 }}>PitchVote</div>
+              <div style={{ fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: 17 }}>PitchVote</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Host Dashboard</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               onClick={() => adminAction('toggleMeeting')}
+              disabled={loading}
               style={{
                 padding: '8px 14px', fontSize: 13, fontWeight: 500,
                 borderRadius: 10, border: 'none', cursor: 'pointer',
                 background: state.meetingOpen ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)',
                 color: state.meetingOpen ? '#34d399' : '#f87171',
               }}>
-              {state.meetingOpen ? '🟢 Meeting Open' : '🔴 Meeting Closed'}
+              {state.meetingOpen ? '🟢 Voting Open' : '🔴 Voting Closed'}
             </button>
             <button className="btn-ghost" onClick={() => loadState()} style={{ padding: '8px 12px', fontSize: 13 }}>
               ↻ Refresh
@@ -111,18 +119,18 @@ export default function HostPage() {
           </div>
         </div>
 
-        <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 28px' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 28px' }}>
           {/* Stats bar */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '24px 0' }}>
             {[
-              { label: 'Presenters', value: state.presenters.length, icon: '🎤' },
-              { label: 'Voters', value: state.voters.length, icon: '👥' },
-              { label: 'Total votes cast', value: totalVotes, icon: '🗳️' },
-              { label: 'Votes remaining', value: (state.voters.length * maxVotesPerVoter) - totalVotes, icon: '⏳' },
+              { label: 'Teams', value: teams.length, icon: '🏫' },
+              { label: 'Voters (total)', value: voters.length, icon: '👥' },
+              { label: 'Votes cast', value: totalVotes, icon: '🗳️' },
+              { label: 'Votes remaining', value: maxPossibleVotes - totalVotes, icon: '⏳' },
             ].map(s => (
               <div key={s.label} className="glass" style={{ borderRadius: 14, padding: '14px 18px' }}>
                 <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
-                <div style={{ fontFamily: 'Sora', fontSize: 26, fontWeight: 700 }}>{s.value}</div>
+                <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 26, fontWeight: 700 }}>{s.value}</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
@@ -131,9 +139,9 @@ export default function HostPage() {
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 4, marginBottom: 24 }}>
             {[
-              { id: 'results', label: '🏆 Results' },
+              { id: 'results', label: '🏆 Team Standings' },
               { id: 'voters', label: '👥 Voter Tracker' },
-              { id: 'manage', label: '⚙️ Manage' },
+              { id: 'manage', label: '⚙️ Session Controls' },
             ].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 style={{
@@ -148,56 +156,63 @@ export default function HostPage() {
           {/* Results tab */}
           {tab === 'results' && (
             <div className="fade-up">
-              {selectedPresenter ? (
-                <PresenterDetail
-                  presenter={selectedPresenter}
-                  onBack={() => setSelectedPresenter(null)}
+              {selectedTeam ? (
+                <TeamDetail
+                  team={selectedTeam}
+                  votersList={voters}
+                  onBack={() => setSelectedTeam(null)}
                 />
               ) : (
                 <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {presenters.map((p, i) => (
-                      <button key={p?.name ?? i} onClick={() => setSelectedPresenter(p)}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {teams.map((t, i) => (
+                      <button key={t.id} onClick={() => setSelectedTeam(t)}
                         style={{
                           width: '100%', textAlign: 'left', cursor: 'pointer',
-                          padding: '18px 22px', borderRadius: 14,
+                          padding: '18px 22px', borderRadius: 16,
                           background: 'rgba(255,255,255,0.04)',
-                          border: i === 0 && p.avg ? '1px solid rgba(245,200,66,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                          border: i === 0 && t.avg ? '1px solid rgba(245,200,66,0.3)' : '1px solid rgba(255,255,255,0.07)',
                           transition: 'all 0.15s',
                         }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                            <span style={{ fontSize: 24, minWidth: 30 }}>
-                              {p.avg ? (MEDALS[i] || `#${i + 1}`) : '—'}
+                            <span style={{ fontSize: 24, minWidth: 32 }}>
+                              {t.avg ? (MEDALS[i] || `#${i + 1}`) : '—'}
                             </span>
                             <div>
-                              <div style={{ fontWeight: 600, fontSize: 17 }}>{p?.name ?? 'Unknown presenter'}</div>
-                              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                                {(p?.votes?.length ?? 0)} vote{(p?.votes?.length ?? 0) !== 1 ? 's' : ''} · tap for breakdown
+                              <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>{t.name}</div>
+                              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                {t.members.map(m => (
+                                  <span key={m.roll} style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{m.name}</span>
+                                ))}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8 }}>
+                                {t.voteCount} vote{t.voteCount !== 1 ? 's' : ''} cast · click to view breakdown
                               </div>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{
-                              fontFamily: 'Sora', fontSize: 28, fontWeight: 700,
-                              color: (p?.avg ?? 0) >= 4 ? '#f5c842' : (p?.avg ?? 0) >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
+                              fontFamily: 'Sora, sans-serif', fontSize: 28, fontWeight: 700,
+                              color: t.avg >= 4 ? '#f5c842' : t.avg >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
                             }}>
-                              {p?.avg ? Number(p.avg).toFixed(1) : '—'}
+                              {t.avg ? Number(t.avg).toFixed(2) : '—'}
                             </div>
                             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>avg / 5</div>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>total: {t.total}</div>
                           </div>
                         </div>
                         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="progress-track" style={{ flex: 1 }}>
-                            <div className="progress-fill" style={{ width: `${p?.avg ? (p.avg / 5 * 100).toFixed(0) : 0}%` }} />
+                            <div className="progress-fill" style={{ width: `${t.avg ? (t.avg / 5 * 100).toFixed(0) : 0}%` }} />
                           </div>
-                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', minWidth: 20 }}>5</span>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', minWidth: 20 }}>5.0</span>
                         </div>
                       </button>
                     ))}
                   </div>
 
-                  {presenters.every(p => !p?.avg) && (
+                  {teams.every(t => !t.avg) && (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
                       No votes cast yet. Waiting for voters…
                     </div>
@@ -210,122 +225,99 @@ export default function HostPage() {
           {/* Voter tracker tab */}
           {tab === 'voters' && (
             <div className="fade-up">
-              <div className="glass" style={{ borderRadius: 14, overflow: 'hidden' }}>
-                {/* Table header */}
+              <div style={{ overflowX: 'auto' }}>
+                <div className="glass" style={{ borderRadius: 14, minWidth: 700 }}>
+                  {/* Table header */}
                   <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: `180px repeat(${presenters.length}, 1fr) 80px`,
-                  padding: '10px 20px',
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
-                  fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
-                  textTransform: 'uppercase', letterSpacing: '0.06em',
-                }}>
-                  <span>Voter</span>
-                  {presenters.map((p, i) => <span key={p?.name ?? i} style={{ textAlign: 'center' }}>{p?.name ?? 'Unknown'}</span>)}
-                  <span style={{ textAlign: 'center' }}>Used</span>
-                </div>
-
-                {voters.map((voter, i) => (
-                  <div key={voter?.name ?? i} style={{
                     display: 'grid',
-                    gridTemplateColumns: `180px repeat(${presenters.length}, 1fr) 80px`,
-                    padding: '12px 20px',
-                    borderBottom: i < voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    alignItems: 'center',
-                    background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                    gridTemplateColumns: `200px repeat(${teams.length}, 1fr) 80px`,
+                    padding: '14px 20px',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
                   }}>
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>{voter?.name ?? 'Unknown voter'}</span>
-                    {presenters.map((p, presenterIndex) => {
-                      const presenterName = p?.name ?? `Presenter ${presenterIndex + 1}`;
-                      const score = voter?.votes?.[presenterName];
-                      return (
-                        <span key={presenterName} style={{ textAlign: 'center' }}>
-                          {score !== undefined ? (
-                            <span style={{
-                              fontSize: 13, fontWeight: 600,
-                              background: 'rgba(107,147,245,0.15)',
-                              color: '#6b93f5',
-                              padding: '2px 10px', borderRadius: 99,
-                            }}>{score}</span>
-                          ) : (
-                            <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 13 }}>—</span>
-                          )}
-                        </span>
-                      );
-                    })}
-                    <span style={{ textAlign: 'center' }}>
-                      <span style={{
-                        fontSize: 12, fontWeight: 600,
-                        color: voter.voteCount === 5 ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.3)',
-                        background: voter.voteCount === 5 ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)',
-                        padding: '3px 10px', borderRadius: 99,
-                      }}>{voter.voteCount}/5</span>
-                    </span>
+                    <span>Voter (Name / Roll)</span>
+                    {teams.map(t => (
+                      <span key={t.id} style={{ textAlign: 'center', fontSize: 11 }} title={t.name}>
+                        {t.name.split(' ')[1] || t.name}
+                      </span>
+                    ))}
+                    <span style={{ textAlign: 'center' }}>Voted</span>
                   </div>
-                ))}
+
+                  {voters.map((voter, idx) => (
+                    <div key={voter.roll} style={{
+                      display: 'grid',
+                      gridTemplateColumns: `200px repeat(${teams.length}, 1fr) 80px`,
+                      padding: '12px 20px',
+                      borderBottom: idx < voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                      alignItems: 'center',
+                      background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>{voter.name}</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                          {voter.roll} · {voter.teamName}
+                        </span>
+                      </div>
+                      
+                      {teams.map(t => {
+                        const isOwnTeam = t.id === voter.teamId;
+                        const score = voter.votes[t.id];
+                        return (
+                          <span key={t.id} style={{ textAlign: 'center' }}>
+                            {isOwnTeam ? (
+                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, fontStyle: 'italic' }}>own</span>
+                            ) : score !== undefined ? (
+                              <span style={{
+                                fontSize: 12, fontWeight: 700,
+                                background: 'rgba(107,147,245,0.15)',
+                                color: '#6b93f5',
+                                padding: '3px 8px', borderRadius: 6,
+                              }}>{score}</span>
+                            ) : (
+                              <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 12 }}>—</span>
+                            )}
+                          </span>
+                        );
+                      })}
+                      
+                      <span style={{ textAlign: 'center' }}>
+                        <span style={{
+                          fontSize: 12, fontWeight: 600,
+                          color: voter.voteCount === 4 ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.3)',
+                          background: voter.voteCount === 4 ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)',
+                          padding: '3px 10px', borderRadius: 99,
+                        }}>{voter.voteCount}/4</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* Manage tab */}
           {tab === 'manage' && (
-            <div className="fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {/* Presenters */}
+            <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              
+              {/* Teams Reference */}
               <div className="glass" style={{ borderRadius: 14, padding: 20 }}>
-                <h3 style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-                  🎤 Presenters
+                <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+                  🏫 Registered Teams and Members
                 </h3>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                  <input type="text" placeholder="Add presenter…" value={newPresenter}
-                    onChange={e => setNewPresenter(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && newPresenter.trim()) { adminAction('addPresenter', newPresenter.trim()); setNewPresenter(''); }}}
-                    style={{ flex: 1 }} />
-                  <button className="btn-ghost"
-                    onClick={() => { adminAction('addPresenter', newPresenter.trim()); setNewPresenter(''); }}
-                    style={{ whiteSpace: 'nowrap', padding: '10px 14px' }}>
-                    + Add
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {presenters.map((p, i) => (
-                    <div key={p?.name ?? i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 14px', borderRadius: 10,
-                      background: 'rgba(255,255,255,0.04)',
-                    }}>
-                      <span style={{ fontSize: 14 }}>{p?.name ?? 'Unknown presenter'}</span>
-                      <button onClick={() => { if (p?.name && confirm(`Remove ${p.name}? Their votes will be deleted.`)) adminAction('removePresenter', p.name); }}
-                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Voters */}
-              <div className="glass" style={{ borderRadius: 14, padding: 20 }}>
-                <h3 style={{ fontFamily: 'Sora', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-                  👥 Voters
-                </h3>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                  <input type="text" placeholder="Add voter…" value={newVoter}
-                    onChange={e => setNewVoter(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && newVoter.trim()) { adminAction('addVoter', newVoter.trim()); setNewVoter(''); }}}
-                    style={{ flex: 1 }} />
-                  <button className="btn-ghost"
-                    onClick={() => { adminAction('addVoter', newVoter.trim()); setNewVoter(''); }}
-                    style={{ whiteSpace: 'nowrap', padding: '10px 14px' }}>
-                    + Add
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
-                  {voters.map((v, i) => (
-                    <div key={v?.name ?? i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.04)',
-                    }}>
-                      <span style={{ fontSize: 14 }}>{v?.name ?? 'Unknown voter'}</span>
-                      <button onClick={() => { if (v?.name && confirm(`Remove ${v.name}?`)) adminAction('removeVoter', v.name); }}
-                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+                  {teams.map(t => (
+                    <div key={t.id} style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <h4 style={{ margin: '0 0 10px 0', fontFamily: 'Sora, sans-serif', fontWeight: 600 }}>{t.name}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {t.members.map(m => (
+                          <div key={m.roll} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{m.name}</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{m.roll}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -333,7 +325,6 @@ export default function HostPage() {
 
               {/* Danger zone */}
               <div style={{
-                gridColumn: '1 / -1',
                 padding: 20, borderRadius: 14,
                 background: 'rgba(220,53,69,0.06)',
                 border: '1px solid rgba(220,53,69,0.15)',
@@ -351,7 +342,7 @@ export default function HostPage() {
                   Reset all votes
                 </button>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>
-                  Clears all cast votes. Presenters and voter list remain intact.
+                  Clears all cast votes. Teams and voter registration remain intact.
                 </p>
               </div>
             </div>
@@ -373,8 +364,14 @@ export default function HostPage() {
   );
 }
 
-function PresenterDetail({ presenter, onBack }) {
-  const votes = presenter?.votes ?? [];
+function TeamDetail({ team, votersList, onBack }) {
+  const votes = team?.votes ?? [];
+
+  const getVoterInfo = (roll) => {
+    const v = votersList.find(x => String(x.roll).trim() === String(roll).trim());
+    return v ? `${v.name} (${v.roll}) · ${v.teamName}` : `Roll ${roll}`;
+  };
+
   return (
     <div className="fade-up">
       <button onClick={onBack} style={{
@@ -386,16 +383,16 @@ function PresenterDetail({ presenter, onBack }) {
       <div className="glass" style={{ borderRadius: 16, padding: 24, marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontFamily: 'Sora', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-              {presenter?.name ?? 'Unknown presenter'}
+            <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
+              {team?.name ?? 'Unknown team'}
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
-              {votes.length} voter{votes.length !== 1 ? 's' : ''} · Rank #{presenter?.rank ?? '—'}
+              {votes.length} vote{votes.length !== 1 ? 's' : ''} cast · Rank #{team?.rank ?? '—'}
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'Sora', fontSize: 40, fontWeight: 700, color: '#f5c842' }}>
-              {presenter?.avg ? Number(presenter.avg).toFixed(2) : '—'}
+            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 40, fontWeight: 700, color: '#f5c842' }}>
+              {team?.avg ? Number(team.avg).toFixed(2) : '—'}
             </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>average score</div>
           </div>
@@ -406,9 +403,9 @@ function PresenterDetail({ presenter, onBack }) {
         {votes.length === 0 ? (
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14 }}>No votes yet.</p>
         ) : (
-          [...votes].sort((a, b) => b[1] - a[1]).map(([voter, score]) => (
-            <div key={voter} className="glass" style={{ borderRadius: 12, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 15 }}>{voter}</span>
+          [...votes].sort((a, b) => b[1] - a[1]).map(([voterRoll, score]) => (
+            <div key={voterRoll} className="glass" style={{ borderRadius: 12, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{getVoterInfo(voterRoll)}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ color: '#f5c842', fontSize: 18, letterSpacing: 2 }}>
                   {'★'.repeat(score)}{'☆'.repeat(5 - score)}
