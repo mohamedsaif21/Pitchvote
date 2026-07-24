@@ -15,8 +15,6 @@ export default async function handler(req, res) {
     const voterListWithVotes = voters.map(v => ({
       name: v.name,
       roll: v.roll,
-      teamId: v.teamId,
-      teamName: v.teamName,
       voteCount: getVoteCount(data, v.roll),
       votes: Object.entries(data.votes).reduce((acc, [teamId, votesObj]) => {
         if (votesObj[v.roll] !== undefined) acc[teamId] = votesObj[v.roll];
@@ -27,14 +25,14 @@ export default async function handler(req, res) {
     return res.json({
       role: 'host',
       teams: stats,
-      presenters: stats, // alias for backwards compatibility
+      presenters: stats,
       voters: voterListWithVotes,
-      maxVotesPerVoter: 4,
+      maxVotesPerVoter: data.teams.length,
       meetingOpen: data.meetingOpen,
     });
   }
 
-  // Voter - only their own data and available teams to vote on
+  // Voter - show all teams to vote on
   const voterRoll = session.roll;
   const voterInfo = findVoterByRoll(data, voterRoll);
   if (!voterInfo) return res.status(401).json({ error: 'Voter not found' });
@@ -44,21 +42,15 @@ export default async function handler(req, res) {
     return acc;
   }, {});
 
-  const availableTeams = data.teams.filter(t => t.id !== voterInfo.team.id);
-
   return res.json({
     role: 'voter',
-    name: voterInfo.member.name,
+    name: voterInfo.name,
     roll: voterRoll,
-    team: {
-      id: voterInfo.team.id,
-      name: voterInfo.team.name
-    },
     teams: data.teams,
-    presenters: availableTeams, // alias for backwards compatibility (teams that are votable)
+    presenters: data.teams,
     myVotes,
     voteCount: getVoteCount(data, voterRoll),
-    maxVotesPerVoter: 4,
+    maxVotesPerVoter: data.teams.length,
     meetingOpen: data.meetingOpen,
   });
 }

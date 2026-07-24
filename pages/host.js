@@ -181,10 +181,8 @@ export default function HostPage() {
                             </span>
                             <div>
                               <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>{t.name}</div>
-                              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                                {t.members.map(m => (
-                                  <span key={m.roll} style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{m.name}</span>
-                                ))}
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
+                                Presenter: {t.members.map(m => m.name).join(', ')}
                               </div>
                               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8 }}>
                                 {t.voteCount} vote{t.voteCount !== 1 ? 's' : ''} cast · click to view breakdown
@@ -257,18 +255,15 @@ export default function HostPage() {
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: 14, fontWeight: 600 }}>{voter.name}</span>
                         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                          {voter.roll} · {voter.teamName}
+                          {voter.roll}
                         </span>
                       </div>
                       
                       {teams.map(t => {
-                        const isOwnTeam = t.id === voter.teamId;
                         const score = voter.votes[t.id];
                         return (
                           <span key={t.id} style={{ textAlign: 'center' }}>
-                            {isOwnTeam ? (
-                              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, fontStyle: 'italic' }}>own</span>
-                            ) : score !== undefined ? (
+                            {score !== undefined ? (
                               <span style={{
                                 fontSize: 12, fontWeight: 700,
                                 background: 'rgba(107,147,245,0.15)',
@@ -285,10 +280,10 @@ export default function HostPage() {
                       <span style={{ textAlign: 'center' }}>
                         <span style={{
                           fontSize: 12, fontWeight: 600,
-                          color: voter.voteCount === 4 ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.3)',
-                          background: voter.voteCount === 4 ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)',
+                          color: voter.voteCount === maxVotesPerVoter ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.3)',
+                          background: voter.voteCount === maxVotesPerVoter ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)',
                           padding: '3px 10px', borderRadius: 99,
-                        }}>{voter.voteCount}/4</span>
+                        }}>{voter.voteCount}/{maxVotesPerVoter}</span>
                       </span>
                     </div>
                   ))}
@@ -304,7 +299,7 @@ export default function HostPage() {
               {/* Teams Reference */}
               <div className="glass" style={{ borderRadius: 14, padding: 20 }}>
                 <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-                  🏫 Registered Teams and Members
+                  🏫 Registered Presenters and Teams
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
                   {teams.map(t => (
@@ -369,7 +364,7 @@ function TeamDetail({ team, votersList, onBack }) {
 
   const getVoterInfo = (roll) => {
     const v = votersList.find(x => String(x.roll).trim() === String(roll).trim());
-    return v ? `${v.name} (${v.roll}) · ${v.teamName}` : `Roll ${roll}`;
+    return v ? `${v.name || 'Unknown'} (${v.roll})` : `Roll ${roll}`;
   };
 
   return (

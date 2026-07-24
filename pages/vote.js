@@ -19,7 +19,7 @@ export default function VotePage() {
   const teams = state?.teams ?? [];
   const myVotes = state?.myVotes ?? {};
   const voteCount = state?.voteCount ?? 0;
-  const maxVotes = state?.maxVotesPerVoter ?? 4;
+  const maxVotes = state?.maxVotesPerVoter ?? teams.length;
   const votesLeft = maxVotes - voteCount;
 
   useEffect(() => { loadState(); }, []);
@@ -97,11 +97,6 @@ export default function VotePage() {
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
               {state.roll ? `${state.roll} — ${state?.name ?? 'voter'}` : `Welcome, ${state?.name ?? 'voter'}`}
             </div>
-            {state.team && (
-              <div style={{ fontSize: 11, color: '#6b93f5', marginTop: 2, fontWeight: 500 }}>
-                🏫 Member of {state.team.name}
-              </div>
-            )}
           </div>
           <button className="btn-ghost" onClick={handleLogout} style={{ padding: '8px 14px', fontSize: 13 }}>
             Logout
@@ -142,7 +137,6 @@ export default function VotePage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {teams.map(team => {
-                  const isOwnTeam = team.id === state.team?.id;
                   const myScore = myVotes[team.id];
                   const hasVoted = myScore !== undefined;
                   
@@ -151,48 +145,26 @@ export default function VotePage() {
                       style={{
                         width: '100%',
                         padding: '18px 20px', borderRadius: 16,
-                        background: isOwnTeam 
-                          ? 'rgba(255,255,255,0.02)' 
-                          : hasVoted 
-                            ? 'rgba(107,147,245,0.06)' 
-                            : 'rgba(255,255,255,0.04)',
-                        border: isOwnTeam
-                          ? '1px dashed rgba(255,255,255,0.1)'
-                          : hasVoted 
-                            ? '1px solid rgba(107,147,245,0.25)' 
-                            : '1px solid rgba(255,255,255,0.07)',
+                        background: hasVoted 
+                          ? 'rgba(107,147,245,0.06)' 
+                          : 'rgba(255,255,255,0.04)',
+                        border: hasVoted 
+                          ? '1px solid rgba(107,147,245,0.25)' 
+                          : '1px solid rgba(255,255,255,0.07)',
                         transition: 'all 0.15s',
                         display: 'flex', flexDirection: 'column', gap: 12,
-                        opacity: isOwnTeam ? 0.6 : 1
                       }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>
                             {team.name}
                           </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                            {team.members.map(m => (
-                              <span key={m.roll} style={{
-                                fontSize: 12,
-                                background: 'rgba(255,255,255,0.06)',
-                                color: 'rgba(255,255,255,0.5)',
-                                padding: '4px 8px',
-                                borderRadius: 6,
-                              }}>
-                                {m.name}
-                              </span>
-                            ))}
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+                            Presenter: {team.members.map(m => m.name).join(', ')}
                           </div>
                         </div>
                         
-                        {isOwnTeam ? (
-                          <span style={{
-                            fontSize: 11, fontWeight: 600,
-                            background: 'rgba(255,255,255,0.08)',
-                            color: 'rgba(255,255,255,0.4)',
-                            padding: '3px 8px', borderRadius: 6
-                          }}>Your Team</span>
-                        ) : hasVoted ? (
+                        {hasVoted ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                             <span style={{
                               fontSize: 11, fontWeight: 600,
@@ -208,7 +180,7 @@ export default function VotePage() {
                           <button 
                             className="btn-primary" 
                             onClick={() => openScore(team)} 
-                            disabled={votesLeft === 0 && !hasVoted}
+                            disabled={votesLeft === 0}
                             style={{ width: 'auto', padding: '6px 12px', fontSize: 13, borderRadius: 8 }}>
                             Score →
                           </button>
@@ -267,7 +239,7 @@ export default function VotePage() {
                 {selectedTeam.name}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 12 }}>
-                Team Members: {selectedTeam.members.map(m => m.name).join(', ')}
+                Presenter: {selectedTeam.members.map(m => m.name).join(', ')}
               </p>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, marginBottom: 24 }}>
                 Rate this team's product pitch from 1 to 5 stars.
@@ -312,7 +284,7 @@ export default function VotePage() {
                 )}
 
                 <button className="btn-primary" style={{ marginTop: 20 }}
-                  disabled={submitting || (!myVotes[selectedTeam.id] && votesLeft === 0)}
+                  disabled={submitting || votesLeft === 0}
                   onClick={submitVote}>
                   {submitting ? 'Submitting…' : `Submit Score ${selectedStar ? `(${selectedStar}/5)` : ''}`}
                 </button>
