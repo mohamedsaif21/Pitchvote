@@ -8,9 +8,9 @@ export default async function handler(req, res) {
   if (!session || session.role !== 'voter') return res.status(401).json({ error: 'Not logged in' });
 
   const { score } = req.body;
-  const teamId = req.body.teamId || req.body.presenter;
+  const presenterRoll = req.body.presenterRoll || req.body.presenter;
 
-  if (!teamId || !score || score < 1 || score > 5) {
+  if (!presenterRoll || !score || score < 1 || score > 5) {
     return res.status(400).json({ error: 'Invalid vote parameters' });
   }
 
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   const voterRoll = session.roll;
 
   try {
-    const updated = await castVote(data, teamId, voterRoll, score);
+    const updated = await castVote(data, presenterRoll, voterRoll, score);
     return res.json({ ok: true, voteCount: getVoteCount(updated, voterRoll) });
   } catch (errorMsg) {
     return res.status(400).json({ error: typeof errorMsg === 'string' ? errorMsg : 'Voting failed' });

@@ -8,18 +8,18 @@ const STAR_LABELS = ['', 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'
 export default function VotePage() {
   const router = useRouter();
   const [state, setState] = useState(null);
-  const [view, setView] = useState('list'); // 'list' | 'score'
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [view, setView] = useState('list');
+  const [selectedPresenter, setSelectedPresenter] = useState(null);
   const [selectedStar, setSelectedStar] = useState(0);
   const [hoverStar, setHoverStar] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitMsg, setSubmitMsg] = useState('');
   const [error, setError] = useState('');
 
-  const teams = state?.teams ?? [];
+  const presenters = state?.presenters ?? [];
   const myVotes = state?.myVotes ?? {};
   const voteCount = state?.voteCount ?? 0;
-  const maxVotes = state?.maxVotesPerVoter ?? teams.length;
+  const maxVotes = state?.maxVotesPerVoter ?? presenters.length;
   const votesLeft = maxVotes - voteCount;
 
   useEffect(() => { loadState(); }, []);
@@ -36,9 +36,9 @@ export default function VotePage() {
     router.push('/');
   }
 
-  function openScore(team) {
-    setSelectedTeam(team);
-    setSelectedStar(myVotes[team.id] ?? 0);
+  function openScore(presenter) {
+    setSelectedPresenter(presenter);
+    setSelectedStar(myVotes[presenter.roll] ?? 0);
     setHoverStar(0);
     setError('');
     setSubmitMsg('');
@@ -53,11 +53,11 @@ export default function VotePage() {
       const res = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: selectedTeam.id, score: selectedStar }),
+        body: JSON.stringify({ presenterRoll: selectedPresenter.roll, score: selectedStar }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
-      setSubmitMsg(`✓ Score of ${selectedStar}/5 submitted for ${selectedTeam.name}!`);
+      setSubmitMsg(`✓ Score of ${selectedStar}/5 submitted for ${selectedPresenter.name}!`);
       await loadState();
     } catch (e) {
       setError('Connection failed. Please try again.');
@@ -121,7 +121,7 @@ export default function VotePage() {
             </div>
             {voteCount >= maxVotes && (
               <p style={{ fontSize: 12, color: '#fbbf24', marginTop: 8 }}>
-                ✓ You have scored all available teams!
+                ✓ You have scored all available presenters!
               </p>
             )}
           </div>
@@ -129,25 +129,28 @@ export default function VotePage() {
           {view === 'list' && (
             <div className="fade-up">
               <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 22, fontWeight: 700, margin: '28px 0 6px' }}>
-                Teams
+                Presenters
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20 }}>
-                Select a team to view members and submit your score.
+                Select a presenter to submit your score.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {teams.map(team => {
-                  const myScore = myVotes[team.id];
+                {presenters.map(p => {
+                  const myScore = myVotes[p.roll];
                   const hasVoted = myScore !== undefined;
+                  const isSelf = p.roll === state.roll;
                   
                   return (
-                    <div key={team.id}
+                    <div key={p.roll}
                       style={{
                         width: '100%',
                         padding: '18px 20px', borderRadius: 16,
                         background: hasVoted 
                           ? 'rgba(107,147,245,0.06)' 
-                          : 'rgba(255,255,255,0.04)',
+                          : isSelf
+                            ? 'rgba(255,255,255,0.01)'
+                            : 'rgba(255,255,255,0.04)',
                         border: hasVoted 
                           ? '1px solid rgba(107,147,245,0.25)' 
                           : '1px solid rgba(255,255,255,0.07)',
@@ -157,14 +160,19 @@ export default function VotePage() {
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>
-                            {team.name}
+                            {p.name}
                           </div>
                           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
-                            Presenter: {team.members.map(m => m.name).join(', ')}
+                            Roll: {p.roll}
+                            {isSelf && <span style={{ color: 'rgba(255,255,255,0.25)', marginLeft: 8 }}>(you)</span>}
                           </div>
                         </div>
                         
-                        {hasVoted ? (
+                        {isSelf ? (
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', padding: '6px 8px' }}>
+                            Cannot vote
+                          </span>
+                        ) : hasVoted ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                             <span style={{
                               fontSize: 11, fontWeight: 600,
@@ -172,14 +180,14 @@ export default function VotePage() {
                               color: '#6b93f5',
                               padding: '3px 8px', borderRadius: 6
                             }}>Scored {myScore}/5</span>
-                            <button className="btn-ghost" onClick={() => openScore(team)} style={{ padding: '2px 6px', fontSize: 11, border: 'none' }}>
+                            <button className="btn-ghost" onClick={() => openScore(p)} style={{ padding: '2px 6px', fontSize: 11, border: 'none' }}>
                               Change
                             </button>
                           </div>
                         ) : (
                           <button 
                             className="btn-primary" 
-                            onClick={() => openScore(team)} 
+                            onClick={() => openScore(p)} 
                             disabled={votesLeft === 0}
                             style={{ width: 'auto', padding: '6px 12px', fontSize: 13, borderRadius: 8 }}>
                             Score →
@@ -198,15 +206,15 @@ export default function VotePage() {
                     Your Submitted Scores
                   </div>
                   <div className="glass" style={{ borderRadius: 14, padding: '4px 0' }}>
-                    {Object.entries(myVotes).map(([teamId, score], i, arr) => {
-                      const teamObj = teams.find(t => t.id === teamId);
+                    {Object.entries(myVotes).map(([presRoll, score], i, arr) => {
+                      const presObj = presenters.find(p => p.roll === presRoll);
                       return (
-                        <div key={teamId} style={{
+                        <div key={presRoll} style={{
                           padding: '12px 20px',
                           borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         }}>
-                          <span style={{ fontSize: 14, fontWeight: 500 }}>{teamObj ? teamObj.name : 'Unknown Team'}</span>
+                          <span style={{ fontSize: 14, fontWeight: 500 }}>{presObj ? presObj.name : 'Unknown Presenter'}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <span style={{ color: '#f5c842', fontSize: 14, letterSpacing: 1 }}>
                               {'★'.repeat(score)}{'☆'.repeat(5 - score)}
@@ -227,22 +235,22 @@ export default function VotePage() {
             </div>
           )}
 
-          {view === 'score' && selectedTeam && (
+          {view === 'score' && selectedPresenter && (
             <div className="fade-up">
               <button onClick={() => setView('list')} style={{
                 marginTop: 24, marginBottom: 4, background: 'none', border: 'none',
                 color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 14, padding: 0,
                 display: 'flex', alignItems: 'center', gap: 6,
-              }}>← Back to teams</button>
+              }}>← Back to presenters</button>
 
               <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 26, fontWeight: 700, margin: '16px 0 4px' }}>
-                {selectedTeam.name}
+                {selectedPresenter.name}
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 12 }}>
-                Presenter: {selectedTeam.members.map(m => m.name).join(', ')}
+                Roll: {selectedPresenter.roll}
               </p>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, marginBottom: 24 }}>
-                Rate this team's product pitch from 1 to 5 stars.
+                Rate this presenter's pitch from 1 to 5 stars.
               </p>
 
               <div className="glass" style={{ borderRadius: 16, padding: 28 }}>
@@ -289,7 +297,7 @@ export default function VotePage() {
                   {submitting ? 'Submitting…' : `Submit Score ${selectedStar ? `(${selectedStar}/5)` : ''}`}
                 </button>
 
-                {votesLeft === 0 && !myVotes[selectedTeam.id] && (
+                {votesLeft === 0 && !myVotes[selectedPresenter.roll] && (
                   <p style={{ fontSize: 13, color: '#fbbf24', textAlign: 'center', marginTop: 12 }}>
                     You have used all your votes.
                   </p>

@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     const voterInfo = findVoterByRoll(data, roll);
     if (!voterInfo) return res.status(401).json({ error: 'Roll number not recognized' });
     
-    const voterName = voterInfo.member.name;
-    const normalizedRoll = String(voterInfo.member.roll).trim();
+    const voterName = voterInfo.name;
+    const normalizedRoll = String(voterInfo.roll).trim();
     
     setSessionCookie(res, { role: 'voter', name: voterName, roll: normalizedRoll });
     return res.json({ ok: true, role: 'voter', name: voterName, roll: normalizedRoll });

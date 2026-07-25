@@ -8,20 +8,19 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 export default function HostPage() {
   const router = useRouter();
   const [state, setState] = useState(null);
-  const [tab, setTab] = useState('results'); // 'results' | 'voters' | 'manage'
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [tab, setTab] = useState('results');
+  const [selectedPresenter, setSelectedPresenter] = useState(null);
   const [actionMsg, setActionMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { loadState(); }, []);
 
-  // Auto-refresh every 10s
   useEffect(() => {
     const id = setInterval(loadState, 10000);
     return () => clearInterval(id);
   }, []);
 
-  const teams = state?.teams ?? [];
+  const presenters = state?.presenters ?? [];
   const voters = state?.voters ?? [];
 
   async function loadState() {
@@ -123,7 +122,7 @@ export default function HostPage() {
           {/* Stats bar */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, margin: '24px 0' }}>
             {[
-              { label: 'Teams', value: teams.length, icon: '🏫' },
+              { label: 'Presenters', value: presenters.length, icon: '🎤' },
               { label: 'Voters (total)', value: voters.length, icon: '👥' },
               { label: 'Votes cast', value: totalVotes, icon: '🗳️' },
               { label: 'Votes remaining', value: maxPossibleVotes - totalVotes, icon: '⏳' },
@@ -139,7 +138,7 @@ export default function HostPage() {
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 4, marginBottom: 24 }}>
             {[
-              { id: 'results', label: '🏆 Team Standings' },
+              { id: 'results', label: '🏆 Presenter Standings' },
               { id: 'voters', label: '👥 Voter Tracker' },
               { id: 'manage', label: '⚙️ Session Controls' },
             ].map(t => (
@@ -156,53 +155,53 @@ export default function HostPage() {
           {/* Results tab */}
           {tab === 'results' && (
             <div className="fade-up">
-              {selectedTeam ? (
-                <TeamDetail
-                  team={selectedTeam}
+              {selectedPresenter ? (
+                <PresenterDetail
+                  presenter={selectedPresenter}
                   votersList={voters}
-                  onBack={() => setSelectedTeam(null)}
+                  onBack={() => setSelectedPresenter(null)}
                 />
               ) : (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {teams.map((t, i) => (
-                      <button key={t.id} onClick={() => setSelectedTeam(t)}
+                    {presenters.map((p, i) => (
+                      <button key={p.roll} onClick={() => setSelectedPresenter(p)}
                         style={{
                           width: '100%', textAlign: 'left', cursor: 'pointer',
                           padding: '18px 22px', borderRadius: 16,
                           background: 'rgba(255,255,255,0.04)',
-                          border: i === 0 && t.avg ? '1px solid rgba(245,200,66,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                          border: i === 0 && p.avg ? '1px solid rgba(245,200,66,0.3)' : '1px solid rgba(255,255,255,0.07)',
                           transition: 'all 0.15s',
                         }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                             <span style={{ fontSize: 24, minWidth: 32 }}>
-                              {t.avg ? (MEDALS[i] || `#${i + 1}`) : '—'}
+                              {p.avg ? (MEDALS[i] || `#${i + 1}`) : '—'}
                             </span>
                             <div>
-                              <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>{t.name}</div>
+                              <div style={{ fontWeight: 700, fontSize: 17, fontFamily: 'Sora, sans-serif' }}>{p.name}</div>
                               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-                                Presenter: {t.members.map(m => m.name).join(', ')}
+                                Roll: {p.roll}
                               </div>
                               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8 }}>
-                                {t.voteCount} vote{t.voteCount !== 1 ? 's' : ''} cast · click to view breakdown
+                                {p.voteCount} vote{p.voteCount !== 1 ? 's' : ''} cast · click to view breakdown
                               </div>
                             </div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
                             <div style={{
                               fontFamily: 'Sora, sans-serif', fontSize: 28, fontWeight: 700,
-                              color: t.avg >= 4 ? '#f5c842' : t.avg >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
+                              color: p.avg >= 4 ? '#f5c842' : p.avg >= 3 ? '#6b93f5' : 'rgba(255,255,255,0.6)',
                             }}>
-                              {t.avg ? Number(t.avg).toFixed(2) : '—'}
+                              {p.avg ? Number(p.avg).toFixed(2) : '—'}
                             </div>
                             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>avg / 5</div>
-                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>total: {t.total}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>total: {p.total}</div>
                           </div>
                         </div>
                         <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div className="progress-track" style={{ flex: 1 }}>
-                            <div className="progress-fill" style={{ width: `${t.avg ? (t.avg / 5 * 100).toFixed(0) : 0}%` }} />
+                            <div className="progress-fill" style={{ width: `${p.avg ? (p.avg / 5 * 100).toFixed(0) : 0}%` }} />
                           </div>
                           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', minWidth: 20 }}>5.0</span>
                         </div>
@@ -210,7 +209,7 @@ export default function HostPage() {
                     ))}
                   </div>
 
-                  {teams.every(t => !t.avg) && (
+                  {presenters.every(p => !p.avg) && (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
                       No votes cast yet. Waiting for voters…
                     </div>
@@ -225,19 +224,18 @@ export default function HostPage() {
             <div className="fade-up">
               <div style={{ overflowX: 'auto' }}>
                 <div className="glass" style={{ borderRadius: 14, minWidth: 700 }}>
-                  {/* Table header */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: `200px repeat(${teams.length}, 1fr) 80px`,
+                    gridTemplateColumns: `200px repeat(${presenters.length}, 1fr) 80px`,
                     padding: '14px 20px',
                     borderBottom: '1px solid rgba(255,255,255,0.08)',
                     fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
                     textTransform: 'uppercase', letterSpacing: '0.06em',
                   }}>
                     <span>Voter (Name / Roll)</span>
-                    {teams.map(t => (
-                      <span key={t.id} style={{ textAlign: 'center', fontSize: 11 }} title={t.name}>
-                        {t.name.split(' ')[1] || t.name}
+                    {presenters.map(p => (
+                      <span key={p.roll} style={{ textAlign: 'center', fontSize: 11 }} title={p.name}>
+                        {p.name.split(' ')[0]}
                       </span>
                     ))}
                     <span style={{ textAlign: 'center' }}>Voted</span>
@@ -246,7 +244,7 @@ export default function HostPage() {
                   {voters.map((voter, idx) => (
                     <div key={voter.roll} style={{
                       display: 'grid',
-                      gridTemplateColumns: `200px repeat(${teams.length}, 1fr) 80px`,
+                      gridTemplateColumns: `200px repeat(${presenters.length}, 1fr) 80px`,
                       padding: '12px 20px',
                       borderBottom: idx < voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                       alignItems: 'center',
@@ -259,11 +257,14 @@ export default function HostPage() {
                         </span>
                       </div>
                       
-                      {teams.map(t => {
-                        const score = voter.votes[t.id];
+                      {presenters.map(p => {
+                        const score = voter.votes[p.roll];
+                        const isSelf = p.roll === voter.roll;
                         return (
-                          <span key={t.id} style={{ textAlign: 'center' }}>
-                            {score !== undefined ? (
+                          <span key={p.roll} style={{ textAlign: 'center' }}>
+                            {isSelf ? (
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>—</span>
+                            ) : score !== undefined ? (
                               <span style={{
                                 fontSize: 12, fontWeight: 700,
                                 background: 'rgba(107,147,245,0.15)',
@@ -296,23 +297,16 @@ export default function HostPage() {
           {tab === 'manage' && (
             <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               
-              {/* Teams Reference */}
+              {/* Presenters Reference */}
               <div className="glass" style={{ borderRadius: 14, padding: 20 }}>
                 <h3 style={{ fontFamily: 'Sora, sans-serif', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-                  🏫 Registered Presenters and Teams
+                  🎤 Registered Presenters
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                  {teams.map(t => (
-                    <div key={t.id} style={{ padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <h4 style={{ margin: '0 0 10px 0', fontFamily: 'Sora, sans-serif', fontWeight: 600 }}>{t.name}</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {t.members.map(m => (
-                          <div key={m.roll} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{m.name}</span>
-                            <span style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{m.roll}</span>
-                          </div>
-                        ))}
-                      </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                  {presenters.map(p => (
+                    <div key={p.roll} style={{ padding: 14, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontFamily: 'Sora, sans-serif', fontWeight: 600 }}>{p.name}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', marginTop: 4 }}>{p.roll}</div>
                     </div>
                   ))}
                 </div>
@@ -337,7 +331,7 @@ export default function HostPage() {
                   Reset all votes
                 </button>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>
-                  Clears all cast votes. Teams and voter registration remain intact.
+                  Clears all cast votes. Presenter registration remains intact.
                 </p>
               </div>
             </div>
@@ -359,8 +353,8 @@ export default function HostPage() {
   );
 }
 
-function TeamDetail({ team, votersList, onBack }) {
-  const votes = team?.votes ?? [];
+function PresenterDetail({ presenter, votersList, onBack }) {
+  const votes = presenter?.votes ?? [];
 
   const getVoterInfo = (roll) => {
     const v = votersList.find(x => String(x.roll).trim() === String(roll).trim());
@@ -379,15 +373,15 @@ function TeamDetail({ team, votersList, onBack }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2 style={{ fontFamily: 'Sora, sans-serif', fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-              {team?.name ?? 'Unknown team'}
+              {presenter?.name ?? 'Unknown presenter'}
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
-              {votes.length} vote{votes.length !== 1 ? 's' : ''} cast · Rank #{team?.rank ?? '—'}
+              {votes.length} vote{votes.length !== 1 ? 's' : ''} cast · Rank #{presenter?.rank ?? '—'}
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 40, fontWeight: 700, color: '#f5c842' }}>
-              {team?.avg ? Number(team.avg).toFixed(2) : '—'}
+              {presenter?.avg ? Number(presenter.avg).toFixed(2) : '—'}
             </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>average score</div>
           </div>
