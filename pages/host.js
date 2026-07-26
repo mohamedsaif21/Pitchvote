@@ -222,37 +222,46 @@ export default function HostPage() {
           {/* Voter tracker tab */}
           {tab === 'voters' && (
             <div className="fade-up">
+              <div style={{ marginBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+                Rows = voters · Columns = presenters being scored
+              </div>
               <div style={{ overflowX: 'auto' }}>
-                <div className="glass" style={{ borderRadius: 14, minWidth: 700 }}>
+                <div className="glass" style={{ borderRadius: 14, minWidth: 800 }}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: `200px repeat(${presenters.length}, 1fr) 80px`,
-                    padding: '14px 20px',
+                    gridTemplateColumns: `44px 190px repeat(${presenters.length}, 1fr) 80px`,
+                    padding: '10px 16px',
                     borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)',
+                    fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)',
                     textTransform: 'uppercase', letterSpacing: '0.06em',
+                    background: 'rgba(255,255,255,0.02)',
                   }}>
-                    <span>Voter (Name / Roll)</span>
-                    {presenters.map(p => (
-                      <span key={p.roll} style={{ textAlign: 'center', fontSize: 11 }} title={p.name}>
-                        {p.name.split(' ')[0]}
+                    <span style={{ textAlign: 'center' }}>#</span>
+                    <span>Voter</span>
+                    {presenters.map((p, i) => (
+                      <span key={p.roll} style={{ textAlign: 'center', fontSize: 10 }} title={p.name}>
+                        #{i + 1}
                       </span>
                     ))}
-                    <span style={{ textAlign: 'center' }}>Voted</span>
+                    <span style={{ textAlign: 'center' }}>Done</span>
                   </div>
 
                   {voters.map((voter, idx) => (
                     <div key={voter.roll} style={{
                       display: 'grid',
-                      gridTemplateColumns: `200px repeat(${presenters.length}, 1fr) 80px`,
-                      padding: '12px 20px',
-                      borderBottom: idx < voters.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                      gridTemplateColumns: `44px 190px repeat(${presenters.length}, 1fr) 80px`,
+                      padding: '10px 16px',
+                      borderBottom: idx < voters.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                       alignItems: 'center',
                       background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                      transition: 'background 0.1s',
                     }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>{voter.name}</span>
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                      <span style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.25)' }}>
+                        {idx + 1}
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{voter.name}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 1, fontFamily: 'monospace' }}>
                           {voter.roll}
                         </span>
                       </div>
@@ -263,16 +272,16 @@ export default function HostPage() {
                         return (
                           <span key={p.roll} style={{ textAlign: 'center' }}>
                             {isSelf ? (
-                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>—</span>
+                              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.08)' }}>—</span>
                             ) : score !== undefined ? (
                               <span style={{
                                 fontSize: 12, fontWeight: 700,
                                 background: 'rgba(107,147,245,0.15)',
                                 color: '#6b93f5',
-                                padding: '3px 8px', borderRadius: 6,
+                                padding: '2px 8px', borderRadius: 6,
                               }}>{score}</span>
                             ) : (
-                              <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 12 }}>—</span>
+                              <span style={{ color: 'rgba(255,255,255,0.08)', fontSize: 12 }}>—</span>
                             )}
                           </span>
                         );
@@ -280,10 +289,11 @@ export default function HostPage() {
                       
                       <span style={{ textAlign: 'center' }}>
                         <span style={{
-                          fontSize: 12, fontWeight: 600,
-                          color: voter.voteCount === maxVotesPerVoter ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.3)',
-                          background: voter.voteCount === maxVotesPerVoter ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.05)',
-                          padding: '3px 10px', borderRadius: 99,
+                          fontSize: 11, fontWeight: 600,
+                          color: voter.voteCount === maxVotesPerVoter ? '#34d399' : voter.voteCount > 0 ? '#6b93f5' : 'rgba(255,255,255,0.2)',
+                          background: voter.voteCount === maxVotesPerVoter ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)',
+                          padding: '2px 10px', borderRadius: 99,
+                          fontVariantNumeric: 'tabular-nums',
                         }}>{voter.voteCount}/{maxVotesPerVoter}</span>
                       </span>
                     </div>
