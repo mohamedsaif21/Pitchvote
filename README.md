@@ -26,19 +26,19 @@ Voters can securely enter the voting room, select presenters, and submit 1–5 s
 Voter Login
 
 <p align="center">
-  <img src="./docs/pitchvote-login.png" alt="PitchVote Login" width="90%">
+  <img src="voter login.png" alt="PitchVote Login" width="90%">
 </p>
 
 Voter Dashboard
 
 <p align="center">
-  <img src="./docs/pitchvote-voter.png" alt="PitchVote Voter Dashboard" width="90%">
+  <img src="voter.png" alt="PitchVote Voter Dashboard" width="90%">
 </p>
 
 Host Dashboard
 
 <p align="center">
-  <img src="./docs/pitchvote-host.png" alt="PitchVote Host Dashboard" width="90%">
+  <img src="host.png" alt="PitchVote Host Dashboard" width="90%">
 </p>
 
 ✨ Features
@@ -98,17 +98,6 @@ npm run dev
 
 Open http://localhost:3000.
 
-📜 Internship Certificate
-
-This project was developed during my internship experience.
-
-Certificate: ./docs/internship-certificate.pdf
-
-<a href="./docs/internship-certificate.pdf">📜 View Internship Certificate</a>
-
-🌐 Portfolio
-
-<a href="YOUR_LIVE_PORTFOLIO_URL">Visit My Portfolio →</a>
 
 👨‍💻 Author
 
