@@ -10,9 +10,8 @@
 
 <p align="center">
   <strong>
-    <a href="YOUR_LIVE_APPLICATION_URL">🌐 Live Application</a>
+    <a href="https://pitchvote.vercel.app/host">🌐 Live Application</a>
     &nbsp;•&nbsp;
-    <a href="YOUR_LIVE_PORTFOLIO_URL">💼 Portfolio</a>
   </strong>
 </p>
 
