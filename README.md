@@ -11,102 +11,79 @@
 <p align="center">
   <strong>
     <a href="https://pitchvote.vercel.app/host">🌐 Live Application</a>
-    &nbsp;•&nbsp;
   </strong>
 </p>
 
-📌 Overview
+---
 
-PitchVote is a web-based product pitch scoring system designed for presentation and evaluation sessions.
+## 📌 Overview
 
-Voters can securely enter the voting room, select presenters, and submit 1–5 star ratings. Hosts can monitor voting activity, manage participants, and view presenter standings in real time.
+**PitchVote** is a web-based product pitch scoring system designed for presentation and evaluation sessions.
 
-🖥️ Application Preview
+Voters can securely enter the voting room, select presenters, and submit **1–5 star ratings**. Hosts can monitor voting activity, manage participants, and view presenter standings in real time.
 
-Voter Login
+---
+
+## 🖥️ Application Preview
+
+### Voter Login
 
 <p align="center">
-  <img src="voter login.png" alt="PitchVote Login" width="90%">
+  <img src="voter login.png" alt="PitchVote Voter Login" width="90%">
 </p>
 
-Voter Dashboard
+### Voter Dashboard
 
 <p align="center">
   <img src="voter.png" alt="PitchVote Voter Dashboard" width="90%">
 </p>
 
-Host Dashboard
+### Host Dashboard
 
 <p align="center">
   <img src="host.png" alt="PitchVote Host Dashboard" width="90%">
 </p>
 
-✨ Features
+---
 
-⭐ 1–5 star presenter scoring
+## ✨ Features
 
-👥 Voter and presenter management
+- ⭐ **1–5 Star Presenter Scoring**
+- 👥 **Voter and Presenter Management**
+- 🏆 **Automatic Presenter Rankings**
+- 📊 **Host Voting Dashboard**
+- 👀 **Voter Activity Tracking**
+- 🔐 **Separate Voter and Host Access**
+- ⏱️ **Voting Session Open/Close Control**
+- 🔄 **Vote Reset Functionality**
+- 📱 **Responsive Interface**
 
-🏆 Automatic presenter rankings
+---
 
-📊 Host voting dashboard
+## 🛠️ Tech Stack
 
-👀 Voter activity tracking
+| Technology | Purpose |
+|---|---|
+| **Next.js** | Full-stack web application |
+| **React** | User interface |
+| **JavaScript** | Application logic |
+| **JWT** | Authentication |
+| **CSS** | Styling |
+| **Vercel** | Deployment |
+| **Git & GitHub** | Version control |
 
-🔐 Separate voter and host access
+---
 
-⏱️ Voting session open/close control
+## 🚀 Quick Start
 
-🔄 Vote reset functionality
+### Prerequisites
 
-📱 Responsive interface
+- Node.js 18+
+- npm or Yarn
 
-🛠️ Tech Stack
+### Installation
 
-Frontend: Next.js, React, JavaScript
-
-Authentication: JWT
-
-Styling: CSS
-
-Deployment: Vercel
-
-Version Control: Git & GitHub
-
-🚀 Quick Start
-
-Prerequisites
-
-Node.js 18+
-
-npm or Yarn
-
-Installation
-
+```bash
 git clone YOUR_GITHUB_REPOSITORY_URL
 cd PitchVote
 npm install
-
-Create .env.local:
-
-HOST_PASSWORD=your_secure_password
-JWT_SECRET=your_random_secret
-
-Run the application:
-
-npm run dev
-
-Open http://localhost:3000.
-
-
-👨‍💻 Author
-
-Mohamed Saif
-
-Frontend Developer | AI & Web Development
-
-GitHub: https://github.com/mohamedsaif21
-
-LinkedIn: https://www.linkedin.com/in/mohamed-saif24/
-
-Email: mohamedsaifb24@gmail.com
